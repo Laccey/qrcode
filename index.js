@@ -1,0 +1,66 @@
+$(function(){
+    // 点击生成二维码
+    $('#qr_btn').click(function(){
+        /*如果已生成过二维码，则删除二维码img图片和canvas，重新生成；反之，则直接生成二维码*/
+        if($('#imgDiv:has(img)').length!=0){
+            $('#imgDiv img').remove();
+            $('canvas').remove();
+            createQr();
+        }else{
+            createQr();
+        }
+    });
+    // 生成二维码
+    function createQr(){
+        document.createElement('canvas').getContext('2d');
+        var valText = $('#qr_text').val();
+
+        // 采用正则表达式判断输入的内容是否是中文
+        var reg=/^[\u0391-\uFFE5]+$/;
+        if(valText!=""&&!reg.test(valText)){
+            // 如果不是中文，直接将输入的内容转换成二维码
+            $('#qr_container').qrcode({render:"canvas",height:180, width:180,correctLevel:0,text:valText});
+        }else{
+            // 如果是中文，直接将输入的内容字符串转换成UTF-8，然后再转换成二维码
+            $('#qr_container').qrcode({render:"canvas",height:180, width:180,correctLevel:0,text:utf16to8(valText)});
+        }
+
+        //获取网页中的canvas对象
+        var mycanvas1=document.getElementsByTagName('canvas')[0];
+
+        //将转换后的img标签插入到html中
+        var img = convertCanvasToImage(mycanvas1);
+        $('#imgDiv').append(img);//imgDiv表示你要插入的容器id
+    }
+
+    // 字符编码
+    function utf16to8(str) {
+        var out, i, len, c;
+        out = "";
+        len = str.length;
+        for(i = 0; i < len; i++) {
+            c = str.charCodeAt(i);
+            if ((c >= 0x0001) && (c <= 0x007F)) {
+                out += str.charAt(i);
+            } else if (c > 0x07FF) {
+                out += String.fromCharCode(0xE0 | ((c >> 12) & 0x0F));
+                out += String.fromCharCode(0x80 | ((c >>  6) & 0x3F));
+                out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+            } else {
+                out += String.fromCharCode(0xC0 | ((c >>  6) & 0x1F));
+                out += String.fromCharCode(0x80 | ((c >>  0) & 0x3F));
+            }
+        }
+        return out;
+    }
+
+    //从canvas中提取图片image
+    function convertCanvasToImage(canvas) {
+        //新Image对象，可以理解为DOM
+        var image = new Image();
+        // canvas.toDataURL 返回的是一串Base64编码的URL
+        // 指定格式PNG
+        image.src = canvas.toDataURL("image/png");
+        return image;
+    }
+});
